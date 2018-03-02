@@ -20,6 +20,7 @@ import Data.IORef
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Vector as V
+import qualified Data.ByteString.UTF8 as UTF8 (fromString)
 
 import qualified Text.LLVM.AST as L
 
@@ -77,7 +78,7 @@ resolveSetupValueInfo cc env v =
     SetupField a n ->
        fromMaybe L.Unknown $
        do L.Pointer (L.Structure xs) <- return (resolveSetupValueInfo cc env a)
-          listToMaybe [L.Pointer i | (n',_,i) <- xs, n == n' ]
+          listToMaybe [L.Pointer i | (n',_,i) <- xs, UTF8.fromString n == n' ]
 
     _ -> L.Unknown
 
@@ -92,7 +93,7 @@ resolveSetupFieldIndex ::
 resolveSetupFieldIndex cc env v n =
   case resolveSetupValueInfo cc env v of
     L.Pointer (L.Structure xs) ->
-      case [o | (n',o,_) <- xs, n == n' ] of
+      case [o | (n',o,_) <- xs, UTF8.fromString n == n' ] of
         [] -> Nothing
         o:_ ->
           do Crucible.PtrType symTy <- typeOfSetupValue cc env v
@@ -178,7 +179,7 @@ typeOfSetupValue' cc env val =
              tys = [ (L.globalSym g, L.globalType g) | g <- L.modGlobals m ] ++
                    [ (L.decName d, L.decFunType d) | d <- L.modDeclares m ] ++
                    [ (L.defName d, L.defFunType d) | d <- L.modDefines m ]
-         case lookup (L.Symbol name) tys of
+         case lookup (L.Symbol (UTF8.fromString name)) tys of
            Nothing -> fail $ "typeOfSetupValue: unknown global " ++ show name
            Just ty ->
              case let ?lc = lc in TyCtx.liftType ty of
@@ -247,7 +248,8 @@ resolveSetupVal cc env tyenv val =
       Crucible.ptrToPtrVal <$> Crucible.mkNullPointer sym Crucible.PtrWidth
     SetupGlobal name ->
       do let mem = cc^.ccEmptyMemImpl
-         Crucible.ptrToPtrVal <$> Crucible.doResolveGlobal sym mem (L.Symbol name)
+         let symbol = L.Symbol (UTF8.fromString name)
+         Crucible.ptrToPtrVal <$> Crucible.doResolveGlobal sym mem symbol
   where
     sym = cc^.ccBackend
     lc = cc^.ccTypeCtx

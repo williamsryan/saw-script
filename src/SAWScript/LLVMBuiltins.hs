@@ -26,6 +26,7 @@ import Control.Lens
 import Control.Monad.State hiding (mapM)
 import Control.Monad.ST (stToIO)
 import Control.Monad.Trans.Except
+import qualified Data.ByteString.UTF8 as UTF8 (fromString, toString)
 import Data.Function (on)
 import Data.List (find, partition, sortBy, groupBy)
 import Data.Maybe (fromMaybe)
@@ -125,7 +126,7 @@ llvm_symexec :: BuiltinContext
              -> Bool
              -> IO TypedTerm
 llvm_symexec bic opts lmod fname allocs inputs outputs doSat =
-  let sym = Symbol fname
+  let sym = Symbol (UTF8.fromString fname)
       sc = biSharedContext bic
       lopts = LSSOpts { optsErrorPathDetails = True
                       , optsSatAtBranches = doSat
@@ -202,7 +203,7 @@ llvm_extract :: BuiltinContext
              -> LLVMSetup ()
              -> IO TypedTerm
 llvm_extract bic opts lmod func _setup =
-  let sym = Symbol func
+  let sym = Symbol (UTF8.fromString func)
       sc = biSharedContext bic
       lopts = LSSOpts { optsErrorPathDetails = True
                       , optsSatAtBranches = True
@@ -363,8 +364,8 @@ checkProtoLLVMExpr cb fnDecl dbgArgNames retinfo margs pe =
         Just ty -> return (CC.Term (ReturnValue ty), retinfo)
         Nothing -> throwE "Function with void return type used with `return`."
     PVar x0 -> do
-      let CB.Ident x = Map.findWithDefault (Ident x0) (Ident x0) dbgArgNames
-      let nid = fromString x
+      let i0 = Ident (UTF8.fromString x0)
+      let nid@(CB.Ident x) = Map.findWithDefault i0 i0 dbgArgNames
       case lookup nid =<< namedArgs of
         Just (n,ty,info) ->
           return (CC.Term (Arg n nid ty),info)
@@ -372,7 +373,7 @@ checkProtoLLVMExpr cb fnDecl dbgArgNames retinfo margs pe =
           case lookupSym (Symbol x) cb of
             Just (Left gb) ->
               return (CC.Term (Global (CB.globalSym gb) (CB.globalType gb)), DU.Unknown) -- XXX: info missing for globals
-            _ -> throwE $ "Unknown variable: " ++ x
+            _ -> throwE $ "Unknown variable: " ++ UTF8.toString x
     PArg n | n < length argTys ->
                return (CC.Term (Arg n (fromString ("args[" ++ show n ++ "]")) (argTys !! n)), DU.Unknown)
            | otherwise ->
@@ -422,7 +423,7 @@ checkProtoLLVMExpr cb fnDecl dbgArgNames retinfo margs pe =
     resolveField DU.Unknown (FieldName name) =
       throwE ("Field names not available for resolving: " ++ name)
     resolveField info (FieldName name) =
-      case DU.fieldIndexByName name info of
+      case DU.fieldIndexByName (UTF8.fromString name) info of
         Nothing -> throwE ("Unknown field: " ++ name)
         Just i  -> return i
 

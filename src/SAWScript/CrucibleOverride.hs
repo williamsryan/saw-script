@@ -34,6 +34,7 @@ import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Class
 import           Control.Monad.IO.Class
 import           Control.Monad
+import qualified Data.ByteString.UTF8 as UTF8 (fromString)
 import           Data.Either (partitionEithers)
 import           Data.Foldable (for_, traverse_)
 import           Data.List (tails)
@@ -649,7 +650,8 @@ matchArg _sc cc prepost actual@(Crucible.LLVMValInt blk off) expectedTy setupval
     SetupGlobal name | Just Crucible.Refl <- Crucible.testEquality (Crucible.bvWidth off) Crucible.PtrWidth ->
       do let mem = cc^.ccEmptyMemImpl
          sym  <- getSymInterface
-         Crucible.LLVMPointer blk' off' <- liftIO $ Crucible.doResolveGlobal sym mem (L.Symbol name)
+         let symbol = L.Symbol (UTF8.fromString name)
+         Crucible.LLVMPointer blk' off' <- liftIO $ Crucible.doResolveGlobal sym mem symbol
 
          p1 <- liftIO (Crucible.natEq sym blk blk')
          p2 <- liftIO (Crucible.bvEq sym off off')

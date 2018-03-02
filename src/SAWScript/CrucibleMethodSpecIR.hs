@@ -38,6 +38,7 @@ import qualified Text.LLVM.AST as L
 import qualified Text.LLVM.PP as L
 import           Data.IORef
 import           Data.Monoid ((<>))
+import qualified Data.ByteString.UTF8 as UTF8 (toString)
 
 import qualified Data.Parameterized.Map as MapF
 import qualified Data.Parameterized.Nonce as Crucible
@@ -357,7 +358,7 @@ initialDefCrucibleMethodSpecIR def = do
   ret <- resolveRetTy (L.defRetType def)
   let L.Symbol nm = L.defName def
   return CrucibleMethodSpec
-    {_csName            = nm
+    {_csName            = UTF8.toString nm
     ,_csArgs            = args
     ,_csRet             = ret
     ,_csPreState        = initialStateSpec
@@ -376,7 +377,7 @@ initialDeclCrucibleMethodSpecIR dec = do
   ret <- resolveRetTy (L.decRetType dec)
   let L.Symbol nm = L.decName dec
   return CrucibleMethodSpec
-    {_csName            = nm
+    {_csName            = UTF8.toString nm
     ,_csArgs            = args
     ,_csRet             = ret
     ,_csPreState        = initialStateSpec

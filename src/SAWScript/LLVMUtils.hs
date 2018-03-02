@@ -15,6 +15,7 @@ import Control.Applicative hiding (many)
 #endif
 import Control.Lens
 import Control.Monad.State
+import qualified Data.ByteString.UTF8 as UTF8 (toString)
 import qualified Data.Map as Map
 import Data.Maybe
 import Verifier.LLVM.Backend
@@ -33,7 +34,7 @@ type SpecLLVMValue = Term
 
 missingSymMsg :: String -> Symbol -> String
 missingSymMsg file (Symbol func) =
-  "Bitcode file " ++ file ++ " does not contain symbol `" ++ func ++ "`."
+  "Bitcode file " ++ file ++ " does not contain symbol `" ++ UTF8.toString func ++ "`."
 
 resolveType :: Codebase s -> MemType -> MemType
 resolveType cb (PtrType ty) = PtrType $ resolveSymType cb ty

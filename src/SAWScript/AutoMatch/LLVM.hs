@@ -6,6 +6,7 @@ module SAWScript.AutoMatch.LLVM where
 
 import Control.Monad.State hiding (mapM)
 import Control.Monad.Free
+import qualified Data.ByteString.UTF8 as UTF8 (toString)
 
 import Text.LLVM hiding (parseDataLayout, Array, Double, Float, FloatType, Void)
 import Verifier.LLVM.Codebase hiding ( Global, ppSymbol, ppIdent, globalSym, globalType )
@@ -45,7 +46,7 @@ getDeclsLLVM sc (LLVMModule file mdl _) =
       when (not . null $ untranslateable) $ do
          separator ThinSep
          liftF . flip Warning () $ "No translation for the following signatures in " ++ file ++ ":"
-         bulleted $ map (("'" ++) . (++ "'")) untranslateable
+         bulleted $ map (("'" ++) . (++ "'") . UTF8.toString) untranslateable
 
       return $ Just translations
 
@@ -53,9 +54,9 @@ getDeclsLLVM sc (LLVMModule file mdl _) =
 
       symDefineToDecl symDefine =
          let Symbol name = sdName symDefine
-             args = mapM (\(Ident an, at) -> Arg an <$> memTypeToStdType at) $ sdArgs symDefine
+             args = mapM (\(Ident an, at) -> Arg (UTF8.toString an) <$> memTypeToStdType at) $ sdArgs symDefine
              retType = memTypeToStdType =<< sdRetType symDefine
-         in Decl name <$> retType <*> args
+         in Decl (UTF8.toString name) <$> retType <*> args
 
       memTypeToStdType t = case t of
          IntType 8  -> Just $ bitSeqType 8

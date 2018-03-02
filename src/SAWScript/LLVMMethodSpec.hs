@@ -42,6 +42,7 @@ import Control.Monad
 import Control.Monad.Cont
 import Control.Monad.State
 import Control.Monad.Trans.Except
+import qualified Data.ByteString.UTF8 as UTF8 (toString)
 import Data.Foldable (traverse_)
 import Data.List (sortBy)
 import Data.Ord (comparing)
@@ -329,7 +330,7 @@ ocStep (ReturnArbitrary tp) = do
   Symbol fname <- gets (ecFunction . ocsEvalContext)
   -- TODO: replace this pattern match with a check and possible error during setup
   Just lty <- liftIO $ TC.logicTypeOfActual dl sc tp
-  value <- liftIO $ scFreshGlobal sc ("lss__return_" ++ fname) lty
+  value <- liftIO $ scFreshGlobal sc ("lss__return_" ++ UTF8.toString fname) lty
   modify $ \ocs -> ocs { ocsReturnValue = Just value }
 
 execBehavior :: (MonadIO m, Functor m) =>

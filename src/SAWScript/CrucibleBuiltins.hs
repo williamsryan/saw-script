@@ -46,6 +46,7 @@ import           Control.Lens
 import           Control.Monad.State
 import qualified Control.Monad.Trans.State.Strict as SState
 import           Control.Applicative
+import qualified Data.ByteString.UTF8 as UTF8 (fromString)
 import           Data.Foldable (for_, toList, find)
 import           Data.Function
 import           Data.IORef
@@ -478,7 +479,7 @@ registerOverride opts cc _ctx cs = do
       llvmctx = cc^.ccLLVMContext
   liftIO $
     printOutLn opts Info $ "Registering override for `" ++ fsym ++ "`"
-  case Map.lookup (L.Symbol fsym) (llvmctx ^. Crucible.symbolMap) of
+  case Map.lookup (L.Symbol (UTF8.fromString fsym)) (llvmctx ^. Crucible.symbolMap) of
     -- LLVMHandleInfo constructor has two existential type arguments,
     -- which are bound here. h :: FnHandle args' ret'
     Just (Crucible.LLVMHandleInfo _decl' h) -> do
@@ -507,7 +508,7 @@ verifySimulate ::
   IO (Maybe (Crucible.MemType, LLVMVal), Crucible.SymGlobalState Sym)
 verifySimulate opts cc mspec args assumes lemmas globals checkSat =
   do let nm = mspec^.csName
-     case Map.lookup (L.Symbol nm) (Crucible.cfgMap (cc^.ccLLVMModuleTrans)) of
+     case Map.lookup (L.Symbol (UTF8.fromString nm)) (Crucible.cfgMap (cc^.ccLLVMModuleTrans)) of
        Nothing -> fail $ unwords ["function", show nm, "not found"]
        Just (Crucible.AnyCFG cfg) ->
          do let h   = Crucible.cfgHandle cfg
