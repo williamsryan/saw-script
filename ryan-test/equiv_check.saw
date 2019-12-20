@@ -1,0 +1,15 @@
+set_base 16;
+
+print "Extracting reference term from: gauss_ref";
+l <- llvm_load_module "gauss.bc";
+gauss_ref <- crucible_llvm_extract l "gauss_ref";
+
+print "Extracting closed form solution term: gauss_closed";
+gauss_closed <- crucible_llvm_extract l "gauss_closed";
+
+print "Proving equivalence: gauss_ref == gauss_closed";
+let thm = {{ \x -> gauss_ref x == gauss_closed x }};
+result <- prove abc thm;
+print result;
+
+print "Done.";
