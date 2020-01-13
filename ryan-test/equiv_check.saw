@@ -1,4 +1,5 @@
-set_base 16;
+//set_base 16;
+enable_experimental;
 
 print "Extracting reference term from: gauss_ref";
 l <- llvm_load_module "gauss.bc";
